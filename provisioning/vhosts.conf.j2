@@ -1,0 +1,12 @@
+DirectoryIndex index.php index.html
+<VirtualHost *:80>
+        ServerAdmin webmaster@{{ domain }}
+        ServerName {{ domain }}
+        DocumentRoot {{ docroot }}
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+        <Directory "{{ docroot }}">
+           Require all granted
+        </Directory>
+</VirtualHost>
+

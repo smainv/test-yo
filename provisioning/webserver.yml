@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  vars:
+    docroot: /mnt/disk/www/public
+    domain: testsite.local
+  tasks:
+    - name: Install Apache2
+      apt: name=apache2 update_cache=yes state=latest
+
+    - name: Install PHP module for Apache
+      apt: name=libapache2-mod-php5 update_cache=yes state=latest
+
+    - name: Make an apachectl symlink
+      file: 
+        state: link 
+        src: /usr/sbin/apache2ctl
+        dest: /usr/local/bin/apachectl
+
+    - name: Disable default site
+      file:
+        path: "/etc/apache2/sites-enabled/000-default.conf"
+        state: absent
+      notify:
+       - restart apache2
+
+    - name: Disable default-ssl site
+      file: 
+        path: "/etc/apache2/sites-enabled/000-default-ssl"
+        state: absent
+      notify:
+       - restart apache2
+
+    - name: Create Web Root
+      file: dest={{ docroot }} mode=775 state=directory owner=www-data group=www-data
+
+    - name: Create virtual host file
+      template: src=vhosts.conf.j2 dest=/etc/apache2/sites-available/{{ domain }}.conf
+
+    - name: Copy PHP script
+      copy: src=index.php dest={{ docroot }}/index.php owner=www-data group=www-data mode=0664
+
+    - name: Run a2ensite
+      command: a2ensite {{ domain }}
+      args:
+        creates: /etc/apache2/sites-enabled/{{ domain }}.conf
+      notify:
+        - restart apache2
+
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+
